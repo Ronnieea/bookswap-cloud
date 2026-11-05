@@ -13,6 +13,8 @@ Resources:
 
   BooksTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: bookswap-books
       BillingMode: PAY_PER_REQUEST
@@ -25,6 +27,8 @@ Resources:
 
   ExchangeRequestsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: bookswap-exchange-requests
       BillingMode: PAY_PER_REQUEST
