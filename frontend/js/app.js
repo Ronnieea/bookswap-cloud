@@ -51,6 +51,29 @@ function renderBooks(books) {
     const card = document.createElement("div");
     card.className = "card book-card";
 
+    // 書籍封面
+    const cover = document.createElement("img");
+    cover.className = "book-cover";
+    cover.alt = `${book.title || "書籍"}的封面`;
+    cover.loading = "lazy";
+
+    // 沒有封面時顯示預設圖示
+    const fallbackCover = "/images/book-placeholder.svg";
+
+    cover.onerror = () => {
+      cover.onerror = null;
+      cover.src = fallbackCover;
+    };
+
+    const cleanIsbn = String(book.isbn || "").replace(/[-\s]/g, "");
+
+    if (/^(?:\d{9}[\dXx]|\d{13})$/.test(cleanIsbn)) {
+      cover.src =
+        `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(cleanIsbn)}-M.jpg?default=false`;
+    } else {
+      cover.src = fallbackCover;
+    }
+
     const body = document.createElement("div");
     body.className = "card-body";
 
@@ -119,6 +142,7 @@ function renderBooks(books) {
     editBtn,
     deleteBtn
     );
+    card.appendChild(cover);
     card.appendChild(body);
     column.appendChild(card);
     bookList.appendChild(column);
