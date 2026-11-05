@@ -1,0 +1,68 @@
+name: Build BookSwap Backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Lambda Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          mkdir -p lambda-package
+          python -m pip install \
+            -r backend/requirements.txt \
+            --target lambda-package/
+
+      - name: Copy application code
+        run: |
+          cp -R backend/app lambda-package/app
+
+      - name: Verify Lambda package
+        run: |
+          test -f lambda-package/app/main.py
+          test -d lambda-package/fastapi
+          test -d lambda-package/mangum
+          test -d lambda-package/boto3
+          test -d lambda-package/pydantic_core
+
+          test ! -d lambda-package/tests
+          test ! -d lambda-package/.venv
+          test ! -d lambda-package/.venv-python313-backup
+
+          PYTHONPATH=lambda-package \
+            python -c "from app.main import handler; print('Lambda handler import successful')"
+
+      - name: Create Lambda ZIP
+        run: |
+          cd lambda-package
+          zip -qr ../bookswap-lambda.zip .
+
+      - name: Check ZIP contents
+        run: |
+          unzip -l bookswap-lambda.zip | grep 'app/main.py'
+          unzip -l bookswap-lambda.zip | grep 'mangum/'
+          unzip -l bookswap-lambda.zip | grep 'fastapi/'
+
+          echo "Lambda ZIP created successfully"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookswap-lambda-package
+          path: bookswap-lambda.zip
+          retention-days: 3
