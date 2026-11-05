@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: BookSwap Cloud - Serverless Book Exchange Platform
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 15
+    MemorySize: 256
+
+Resources:
+
+  BooksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: bookswap-books
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: book_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: book_id
+          KeyType: HASH
+
+  ExchangeRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: bookswap-exchange-requests
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: request_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: request_id
+          KeyType: HASH
+
+  
+  BookSwapApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - DELETE
+          - OPTIONS
+
+  BookSwapLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bookswap-lambda-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: BookSwapDynamoDBAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                  - dynamodb:TransactWriteItems
+                Resource:
+                  - !GetAtt BooksTable.Arn
+                  - !GetAtt ExchangeRequestsTable.Arn
+
+  BookSwapApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: bookswap-api
+      CodeUri: ../backend/
+      Handler: app.main.handler
+      Role: !GetAtt BookSwapLambdaRole.Arn
+
+      Environment:
+        Variables:
+          STORAGE_BACKEND: dynamodb
+          BOOKS_TABLE_NAME: !Ref BooksTable
+          EXCHANGE_REQUESTS_TABLE_NAME: !Ref ExchangeRequestsTable
+
+      Events:
+        ApiRoot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BookSwapApi
+            Path: /
+            Method: ANY
+
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BookSwapApi
+            Path: /{proxy+}
+            Method: ANY
+
+
+Outputs:
+
+  BooksTableName:
+    Description: DynamoDB table for books
+    Value: !Ref BooksTable
+
+  ExchangeRequestsTableName:
+    Description: DynamoDB table for exchange requests
+    Value: !Ref ExchangeRequestsTable
+
+  
+  BookSwapApiUrl:
+    Description: BookSwap Cloud API Gateway URL
+    Value: !Sub "https://${BookSwapApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
