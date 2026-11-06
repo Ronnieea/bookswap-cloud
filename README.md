@@ -59,7 +59,7 @@ flowchart LR
 
 ### 4. Infrastructure as Code（IaC）
 
-使用 **AWS SAM / CloudFormation** 定義並部署雲端資源。DynamoDB 資料表設定 `DeletionPolicy: Retain` 與 `UpdateReplacePolicy: Retain`，降低堆疊變更時意外刪除資料的風險，並建立 On-Demand Backup。
+使用 **AWS SAM / CloudFormation** 定義並部署雲端資源。
 
 ### 5. AI 輔助開發
 
