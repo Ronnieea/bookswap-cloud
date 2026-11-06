@@ -11,7 +11,7 @@
 - **ISBN 查詢**：透過後端 API 查詢外部書籍資訊，輔助填入書名與作者。
 - **交換申請**：對可交換的書籍送出申請，並查看申請紀錄。
 
-## 雲端架構
+## 雲端架構與選用原因
 
 ```mermaid
 flowchart LR
@@ -23,6 +23,15 @@ flowchart LR
     CI --> FD[Frontend CD] --> S3
     CI --> BD[Backend CD] --> L
 ```
+
+| 服務 | 用途與選用原因 |
+| --- | --- |
+| **AWS Lambda（Python）** | 執行 Python 後端程式，採事件驅動方式處理 API 請求，無須自行管理伺服器，並可依請求量自動擴展。 |
+| **Amazon API Gateway** | 提供統一的 REST API 入口，負責接收前端HTTP請求並轉送至Lambda。 |
+| **Amazon DynamoDB** | 使用 NoSQL 資料庫儲存書籍及交換申請資料，適合本專案以書籍 ID 為主的查詢與 CRUD 操作，並提供託管式擴展能力。 |
+| **Amazon S3** | 儲存 HTML、CSS、JavaScript 等靜態前端檔案，降低網站託管與維護成本。 |
+| **Amazon CloudFront** | 透過 CDN 提供前端網站內容，加速靜態資源傳遞，並搭配 HTTPS 提供安全的網站存取。 |
+| **AWS SAM / CloudFormation** | 透過 Infrastructure as Code（IaC）定義與部署雲端資源，提升環境建置的一致性、可重現性及版本控管能力。|
 
 ## 使用工具
 
