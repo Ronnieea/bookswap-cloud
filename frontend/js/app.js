@@ -475,11 +475,7 @@ exchangeForm.addEventListener("submit", async (event) => {
   }
 });
 
-
-// =====================================
 // 交換申請列表
-// =====================================
-
 const booksTab = document.getElementById("booksTab");
 const requestsTab = document.getElementById("requestsTab");
 
